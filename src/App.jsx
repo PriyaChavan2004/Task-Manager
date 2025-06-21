@@ -1,80 +1,98 @@
-import { useState, useEffect } from 'react';
+// App.jsx
+import React, { useState, useEffect } from 'react';
 import Navbar from './components/Navbar';
+import Login from './components/Login';
+import Register from './components/Register';
+import API from './services/api';
 import { v4 as uuidv4 } from 'uuid';
-
 
 function App() {
   const [todo, setTodo] = useState("");
   const [todos, setTodos] = useState([]);
   const [view, setView] = useState("today");
   const [errorMsg, setErrorMsg] = useState("");
+  const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('token'));
+  const [showRegister, setShowRegister] = useState(false);
 
-  // Load todos from localStorage
-  useEffect(() => {
-    const saved = localStorage.getItem("todos");
-    if (saved) {
-      setTodos(JSON.parse(saved));
-    }
-  }, []);
+  const today = new Date().toISOString().split("T")[0];
+// Fetch Tasks on Login
 
-  // Save todos to localStorage
+ if (!isLoggedIn) {
+    return showRegister ? (
+      <Register setShowRegister={setShowRegister} />
+    ) : (
+      <Login onLogin={() => setIsLoggedIn(true)} setShowRegister={setShowRegister} />
+    );
+  }
+  
   useEffect(() => {
-    localStorage.setItem("todos", JSON.stringify(todos));
-  }, [todos]);
+    if (isLoggedIn) fetchTodos();
+  }, [isLoggedIn]);
+
+const fetchTodos = async () => {
+    const res = await API.get('/todos');
+    setTodos(res.data);
+  };
+  
+
+   
 
   const handleChange = (e) => setTodo(e.target.value);
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (!todo.trim()) {
       setErrorMsg("Please enter a task");
       return;
     }
-
-    const newTask = {
-      id: uuidv4(),
+    const res = await API.post('/todos', {
       todo: todo.trim(),
-      date: new Date().toISOString().split("T")[0],
-      isCompleted: false,
-    };
-
-    setTodos([...todos, newTask]);
+      date: today
+    });
+    setTodos([...todos, res.data]);
     setTodo("");
     setErrorMsg("");
   };
 
-  const handleDelete = (id) => {
-    const updated = todos.filter((t) => t.id !== id);
-    setTodos(updated);
+  const handleDelete = async (id) => {
+    await API.delete(`/todos/${id}`);
+    setTodos(todos.filter((t) => t._id !== id));
   };
 
   const handleEdit = (id) => {
-    const taskToEdit = todos.find((t) => t.id === id);
+    const taskToEdit = todos.find((t) => t._id === id);
     if (taskToEdit) {
       setTodo(taskToEdit.todo);
-      const updated = todos.filter((t) => t.id !== id);
-      setTodos(updated);
+      handleDelete(id);
     }
   };
 
-  const handleToggleComplete = (id) => {
-    const updated = todos.map((task) =>
-      task.id === id ? { ...task, isCompleted: !task.isCompleted } : task
-    );
-    setTodos(updated);
+  const handleToggleComplete = async (id) => {
+    const updatedTask = todos.find((t) => t._id === id);
+    const res = await API.put(`/todos/${id}`, {
+      ...updatedTask,
+      isCompleted: !updatedTask.isCompleted
+    });
+    setTodos(todos.map((task) => (task._id === id ? res.data : task)));
   };
 
-  const today = new Date().toISOString().split("T")[0];
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    setIsLoggedIn(false);
+    setTodos([]);
+  };
+
   const filteredTodos = view === "today"
     ? todos.filter((t) => t.date === today)
     : todos;
 
-  // Calculate the completed and incomplete tasks for the conclusion block
   const completedTasks = filteredTodos.filter(task => task.isCompleted).length;
   const incompleteTasks = filteredTodos.filter(task => !task.isCompleted).length;
 
+   
+
   return (
     <>
-      <Navbar />
+      <Navbar isLoggedIn={isLoggedIn} handleLogout={handleLogout} />
       <div className="container bg-violet-100 rounded-xl p-4 my-10 mx-auto w-[35%] h-[80vh] overflow-auto">
         <h2 className="font-bold text-2xl text-center">TODO List</h2>
 
@@ -103,8 +121,7 @@ function App() {
             onClick={() => setView("today")}
             className={`px-3 py-1 rounded-full ${view === "today"
               ? "bg-violet-600 text-white"
-              : "bg-white border border-violet-600 text-violet-600"
-              }`}
+              : "bg-white border border-violet-600 text-violet-600"}`}
           >
             Today's Tasks
           </button>
@@ -112,8 +129,7 @@ function App() {
             onClick={() => setView("all")}
             className={`px-3 py-1 rounded-full ${view === "all"
               ? "bg-violet-600 text-white"
-              : "bg-white border border-violet-600 text-violet-600"
-              }`}
+              : "bg-white border border-violet-600 text-violet-600"}`}
           >
             All Tasks
           </button>
@@ -122,18 +138,18 @@ function App() {
         <div className="todos mt-4 overflow-y-auto h-[40vh]">
           <h3 className="text-lg font-bold mb-2">Your Tasks</h3>
           {filteredTodos.length === 0 ? (
-            <p className=" text-violet-700">No tasks to display</p>
+            <p className="text-violet-700">No tasks to display</p>
           ) : (
             filteredTodos.map((task) => (
               <div
-                key={task.id}
+                key={task._id}
                 className="flex justify-between items-center bg-white p-3 mb-2 rounded shadow"
               >
-                <div className=" flex items-center gap-2">
+                <div className="flex items-center gap-2">
                   <input
                     type="checkbox"
                     checked={task.isCompleted}
-                    onChange={() => handleToggleComplete(task.id)}
+                    onChange={() => handleToggleComplete(task._id)}
                   />
                   <span className={task.isCompleted ? "line-through text-gray-500" : ""}>
                     {task.todo}
@@ -141,13 +157,13 @@ function App() {
                 </div>
                 <div className="flex gap-2">
                   <button
-                    onClick={() => handleEdit(task.id)}
-                    className=" bg-amber-400 text-white px-2 py-1 rounded hover:bg-amber-600"
+                    onClick={() => handleEdit(task._id)}
+                    className="bg-amber-400 text-white px-2 py-1 rounded hover:bg-amber-600"
                   >
                     Edit
                   </button>
                   <button
-                    onClick={() => handleDelete(task.id)}
+                    onClick={() => handleDelete(task._id)}
                     className="bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600"
                   >
                     Delete
@@ -158,7 +174,6 @@ function App() {
           )}
         </div>
 
-        {/* Stylable Conclusion block with max height and overflow auto */}
         <div className="conclusion mt-4 text-center p-4 bg-gray-100 rounded-lg shadow-lg max-h-60 overflow-auto">
           <h3 className="font-semibold text-xl text-violet-700">Conclusion of the Day</h3>
           <div className="mt-2">
