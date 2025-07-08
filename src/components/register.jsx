@@ -1,15 +1,18 @@
 // src/components/Register.jsx
 import { useState } from "react";
 import API from "../services/api";
-
+  
+ 
 // eslint-disable-next-line react/prop-types
 const Register = ({ setShowRegister, onLogin }) => {
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState(false);
+ const [password, setPassword] = useState("");
+ const [error, setError] = useState("");
+const [success, setSuccess] = useState(false);
 
-  const handleRegister = async () => {
+ 
+
+  const handleRegister = async () => { 
     try {
       const res = await API.post("/auth/register", { email, password });
       if (res.status === 201 || res.status === 200) {

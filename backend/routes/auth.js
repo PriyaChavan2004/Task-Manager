@@ -2,7 +2,7 @@
 const express = require("express");
 const router = express.Router();
 const User = require("../models/User");
-const bcrypt = require("bcryptjs");
+const bcrypt = require("bcryptjs");//A library to hash and verify passwords securely.
 const jwt = require("jsonwebtoken");
 
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -35,12 +35,12 @@ router.post("/login", async (req, res) => {
 
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(401).json({ message: "Invalid credentials" });
+      return res.status(401).json({ message: "Invalid username" });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.status(401).json({ message: "Invalid credentials" });
+      return res.status(401).json({ message: "Invalid password" });
     }
 
     // Use "id" here to match with frontend and middleware
