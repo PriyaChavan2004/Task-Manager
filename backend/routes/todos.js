@@ -1,8 +1,8 @@
-// backend/routes/todos.js
+// backend 
 const express = require("express");
 const router = express.Router();
 const Todo = require("../models/Todo");
-const auth = require("../middleware/auth"); // ✅ ensures only logged-in users can access
+const auth = require("../middleware/auth"); //ensures only loggedin users can access
 
 // Get all todos for logged-in user
 router.get("/", auth, async (req, res) => {
@@ -21,7 +21,7 @@ router.post("/", auth, async (req, res) => {
     const newTodo = new Todo({
       todo,
       date,
-      user: req.user, // ✅ associate with logged-in user
+      user: req.user,  
     });
     await newTodo.save();
     res.status(201).json(newTodo);
@@ -34,7 +34,7 @@ router.post("/", auth, async (req, res) => {
 router.put("/:id", auth, async (req, res) => {
   try {
     const updatedTodo = await Todo.findOneAndUpdate(
-      { _id: req.params.id, user: req.user }, // ✅ only update if user owns it
+      { _id: req.params.id, user: req.user }, //  only update if user  it
       req.body,
       { new: true }
     );

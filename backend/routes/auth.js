@@ -7,7 +7,7 @@ const jwt = require("jsonwebtoken");
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
-// ✅ Register route
+//  Register route
 router.post("/register", async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -28,7 +28,7 @@ router.post("/register", async (req, res) => {
   }
 });
 
-// ✅ Login route
+// Login route
 router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -42,8 +42,7 @@ router.post("/login", async (req, res) => {
     if (!isMatch) {
       return res.status(401).json({ message: "Invalid password" });
     }
-
-    // Use "id" here to match with frontend and middleware
+ 
     const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: "1d" });
 
     return res.status(200).json({ token });

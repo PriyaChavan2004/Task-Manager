@@ -1,4 +1,4 @@
-import axios from 'axios'; // ✅ This line is required
+import axios from 'axios'; //  This line is required
 
 const API = axios.create({
   baseURL: 'http://localhost:5000/api',
@@ -12,4 +12,4 @@ API.interceptors.request.use((req) => {
   return req;
 });
 
-export default API; // ✅ Export default
+export default API;  

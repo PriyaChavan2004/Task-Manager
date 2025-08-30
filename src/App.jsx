@@ -14,9 +14,10 @@ function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('token'));
   const [showRegister, setShowRegister] = useState(false);
 
-  const today = new Date().toISOString().split("T")[0];
-// Fetch Tasks on Login
 
+  const today = new Date().toISOString().split("T")[0];
+
+// Fetch Tasks on Login
  if (!isLoggedIn) {
     return showRegister ? (
       <Register setShowRegister={setShowRegister} />
